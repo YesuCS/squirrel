@@ -1,0 +1,257 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Squirrel.App.ViewModels"
+        x:Class="Squirrel.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        x:Name="Root"
+        Title="Squirrel 🐿️"
+        Width="860" Height="640"
+        MinWidth="640" MinHeight="480">
+
+    <DockPanel Margin="16">
+
+        <!-- Always-visible capture bar: the shiny idea goes here, then back to work. -->
+        <Border DockPanel.Dock="Top" Classes="card" Background="#3320A060">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                        Content="Catch it"
+                        Command="{Binding CaptureCommand}" />
+                <TextBox Watermark="Shiny new idea? Dump it here and get back to what you were doing…"
+                         Text="{Binding CaptureText}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding Gesture="Enter" Command="{Binding CaptureCommand}" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+            </DockPanel>
+        </Border>
+
+        <TabControl Margin="0,10,0,0">
+
+            <!-- ================= NOW ================= -->
+            <TabItem Header="Now">
+                <ScrollViewer>
+                    <StackPanel Margin="0,12" Spacing="8" MaxWidth="640">
+
+                        <StackPanel IsVisible="{Binding HasNoFocus}" Spacing="10">
+                            <TextBlock Classes="h1" Text="Nothing in focus." />
+                            <TextBlock TextWrapping="Wrap"
+                                       Text="Pick ONE project to be your Now. Everything else stays out of sight. Go to the Projects tab and hit Focus on one." />
+                        </StackPanel>
+
+                        <StackPanel IsVisible="{Binding HasFocus}" Spacing="14">
+                            <TextBlock Classes="muted" Text="RIGHT NOW YOU ARE WORKING ON" />
+                            <TextBlock Classes="h1" TextWrapping="Wrap"
+                                       Text="{Binding FocusProject.Name, FallbackValue=''}" />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="muted" Text="THE ONE NEXT ACTION" />
+                                    <TextBlock FontSize="20" TextWrapping="Wrap"
+                                               IsVisible="{Binding FocusProject.HasNextAction, FallbackValue=False}"
+                                               Text="{Binding FocusProject.NextAction, FallbackValue=''}" />
+                                    <TextBlock FontSize="16" Opacity="0.7"
+                                               IsVisible="{Binding FocusProject.NeedsNextAction, FallbackValue=False}"
+                                               Text="No next action set. Type the smallest possible step below and save it." />
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Classes="h2" Text="Did it? What's the next tiny step?" />
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                                        Content="Done → swap it in"
+                                        Command="{Binding CompleteFocusStepCommand}" />
+                                <TextBox Watermark="e.g. open the csproj and add the NuGet reference"
+                                         Text="{Binding FocusNextStepDraft}" />
+                            </DockPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="I worked on this" Command="{Binding TouchFocusCommand}" />
+                                <Button Content="Clear focus" Command="{Binding ClearFocusCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= INBOX ================= -->
+            <TabItem Header="{Binding InboxTabHeader}">
+                <ScrollViewer>
+                    <StackPanel Margin="0,12" Spacing="4">
+                        <TextBlock Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap"
+                                   Text="Everything you caught, from the app or the API. Promote it to a project or dismiss it; no item requires anything from you today." />
+                        <ItemsControl ItemsSource="{Binding Inbox}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:InboxItemViewModel">
+                                    <Border Classes="card">
+                                        <DockPanel>
+                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                                                <Button Content="→ Project"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).PromoteInboxItemCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Dismiss"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).DismissInboxItemCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+                                                <TextBlock Classes="muted" Text="{Binding Meta}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= PROJECTS ================= -->
+            <TabItem Header="Projects">
+                <ScrollViewer>
+                    <StackPanel Margin="0,12" Spacing="4">
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="New project" />
+                                <TextBox Watermark="Project name" Text="{Binding NewProjectName}" />
+                                <TextBox Watermark="The one next action (small enough to do in one sitting)"
+                                         Text="{Binding NewProjectNextAction}" />
+                                <Button Content="Add project" HorizontalAlignment="Right"
+                                        Command="{Binding AddProjectCommand}" />
+                            </StackPanel>
+                        </Border>
+
+                        <ItemsControl ItemsSource="{Binding Projects}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ProjectItemViewModel">
+                                    <Border Classes="card">
+                                        <StackPanel Spacing="8">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Classes="muted"
+                                                           Text="{Binding StatusText}" />
+                                                <TextBlock Classes="h2" Text="{Binding Name}" TextWrapping="Wrap" />
+                                            </DockPanel>
+                                            <TextBlock Classes="muted" Text="{Binding TouchedText}" />
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Save"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).SaveNextActionCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <TextBox Watermark="Next action…"
+                                                         Text="{Binding NextActionDraft}" />
+                                            </DockPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Button Content="Focus"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).SetFocusCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Touch"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).TouchProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Park" IsVisible="{Binding IsActive}"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).ParkProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Reactivate" IsVisible="{Binding IsParked}"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).ReactivateProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Done ✔"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).CompleteProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Delete" Opacity="0.6"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= RESURFACE ================= -->
+            <TabItem Header="{Binding StaleTabHeader}">
+                <ScrollViewer>
+                    <StackPanel Margin="0,12" Spacing="4">
+                        <TextBlock Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap"
+                                   Text="Projects the hyperfocus moved on from. No guilt; pick one to re-enter via its next action, or consciously park it." />
+                        <ItemsControl ItemsSource="{Binding StaleProjects}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ProjectItemViewModel">
+                                    <Border Classes="card" Background="#33A07020">
+                                        <StackPanel Spacing="6">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Classes="muted"
+                                                           Text="{Binding TouchedText}" />
+                                                <TextBlock Classes="h2" Text="{Binding Name}" TextWrapping="Wrap" />
+                                            </DockPanel>
+                                            <TextBlock TextWrapping="Wrap"
+                                                       IsVisible="{Binding HasNextAction}"
+                                                       Text="{Binding NextAction}" />
+                                            <TextBlock Opacity="0.7" IsVisible="{Binding NeedsNextAction}"
+                                                       Text="(no next action recorded; that's probably why it stalled)" />
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <Button Content="Focus on this"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).SetFocusCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Still alive (touch)"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).TouchProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <Button Content="Park it, guilt-free"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).ParkProjectCommand}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= SETTINGS ================= -->
+            <TabItem Header="Settings">
+                <ScrollViewer>
+                    <StackPanel Margin="0,12" Spacing="10" MaxWidth="680">
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="Capture API" />
+                                <TextBlock TextWrapping="Wrap" Classes="muted"
+                                           Text="Send tasks to Squirrel from anywhere on this machine: Shortcuts, Alfred, scripts, Stream Deck. POST /capture with your key." />
+                                <TextBlock Text="Base URL" Classes="muted" />
+                                <TextBox IsReadOnly="True" Text="{Binding ApiBaseUrl, Mode=OneTime}" />
+                                <TextBlock Text="API key (X-Api-Key header)" Classes="muted" />
+                                <TextBox IsReadOnly="True" Text="{Binding ApiKey, Mode=OneTime}" />
+                                <TextBlock Text="Example" Classes="muted" />
+                                <TextBox IsReadOnly="True" AcceptsReturn="True" FontFamily="Consolas,Menlo,monospace"
+                                         Text="{Binding CurlExample, Mode=OneTime}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="Resurfacing" />
+                                <TextBlock Classes="muted" TextWrapping="Wrap"
+                                           Text="A project is considered stale after this many days without a touch." />
+                                <DockPanel>
+                                    <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Save"
+                                            Command="{Binding SaveStaleDaysCommand}" />
+                                    <TextBox Text="{Binding StaleDaysText}" />
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="Data" />
+                                <TextBlock Classes="muted" Text="Everything lives in one SQLite file:" />
+                                <TextBox IsReadOnly="True" Text="{Binding DbPath, Mode=OneTime}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
