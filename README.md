@@ -54,6 +54,38 @@ curl -X POST http://127.0.0.1:53595/capture \
 All routes except `/health` require the `X-Api-Key` header. The server binds to
 127.0.0.1 only; it is not reachable from the network.
 
+## Living in the tray
+
+Closing the window doesn't quit Squirrel; it tucks into the system tray (menu
+bar on macOS) and keeps accepting API captures. The tray menu has Open, Quick
+capture (a tiny always-on-top box; Enter saves, Esc closes), Resurface (jumps
+straight to that tab), and Quit. The tray tooltip shows how many projects are
+waiting to resurface.
+
+## Auto-updates
+
+Installed builds check GitHub Releases quietly on launch via
+[Velopack](https://velopack.io); if a new version exists it downloads in the
+background and applies on exit, never mid-session. Set your repo URL in
+`src/Squirrel.App/Services/Updater.cs` (`Updater.RepoUrl`) before your first
+release. Running from source skips all of this automatically.
+
+## Releasing
+
+Tag a version and push it; CI does the rest:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+`.github/workflows/release.yml` publishes self-contained builds for
+osx-arm64, win-x64, and linux-x64, packs installers with Velopack, and
+uploads everything to a GitHub Release. Existing installs auto-update from
+there. Note: macOS builds are unsigned; first launch needs right-click →
+Open (code signing/notarization requires an Apple Developer account and can
+be added to the workflow later).
+
 ## Building
 
 Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0).

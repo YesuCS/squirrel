@@ -16,6 +16,9 @@ public partial class MainViewModel : ObservableObject
     public ObservableCollection<ProjectItemViewModel> StaleProjects { get; } = new();
 
     [ObservableProperty]
+    private int selectedTabIndex;
+
+    [ObservableProperty]
     private string captureText = "";
 
     [ObservableProperty]

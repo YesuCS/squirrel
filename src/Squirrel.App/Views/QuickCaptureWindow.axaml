@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Squirrel.App.Views.QuickCaptureWindow"
+        Title="Catch it"
+        Width="520" SizeToContent="Height"
+        CanResize="False"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen">
+
+    <StackPanel Margin="16" Spacing="8">
+        <TextBox x:Name="CaptureBox"
+                 Watermark="Shiny new idea? Enter saves it, Esc closes."
+                 KeyDown="OnCaptureKeyDown" />
+        <TextBlock Opacity="0.6" FontSize="12"
+                   Text="Goes straight to the Squirrel inbox; nothing else required." />
+    </StackPanel>
+</Window>
