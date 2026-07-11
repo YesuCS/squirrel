@@ -52,6 +52,7 @@ public partial class MainViewModel : ObservableObject
     public string ApiKey { get; }
     public string CurlExample { get; }
     public string DbPath { get; }
+    public string ManualText { get; }
 
     public MainViewModel(SquirrelStore store, string apiBaseUrl)
     {
@@ -66,11 +67,27 @@ public partial class MainViewModel : ObservableObject
             "  -d '{\"text\":\"your idea here\",\"source\":\"curl\"}'";
 
         staleDaysText = store.StaleDays.ToString();
+        ManualText = LoadManual();
 
         // Refresh the UI whenever anything writes to the store,
         // including captures arriving over the local API.
         _store.Changed += () => Dispatcher.UIThread.Post(Refresh);
         Refresh();
+    }
+
+    private static string LoadManual()
+    {
+        try
+        {
+            using var stream = Avalonia.Platform.AssetLoader.Open(
+                new Uri("avares://Squirrel.App/Assets/MANUAL.md"));
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        catch
+        {
+            return "Manual could not be loaded. The full manual also lives in the repo at src/Squirrel.App/Assets/MANUAL.md.";
+        }
     }
 
     public void Refresh()

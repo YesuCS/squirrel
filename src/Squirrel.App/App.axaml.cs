@@ -19,6 +19,9 @@ public class App : Application
     private MainViewModel? _viewModel;
     private MainWindow? _mainWindow;
     private TrayIcon? _trayIcon;
+    private GlobalHotkey? _hotkey;
+    private QuickCaptureWindow? _quickCapture;
+    private DispatcherTimer? _nudgeTimer;
     private bool _quitting;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -59,10 +62,29 @@ public class App : Application
             _store.Changed += () => Dispatcher.UIThread.Post(UpdateTrayTooltip);
             UpdateTrayTooltip();
 
+            // OS-global capture hotkey (Ctrl+Shift+Space). Failure is fine;
+            // the tray menu remains the fallback.
+            try
+            {
+                _hotkey = new GlobalHotkey(() => Dispatcher.UIThread.Post(ShowQuickCapture));
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Global hotkey unavailable: {ex.Message}");
+            }
+
+            // Gentle resurface nudges: first look shortly after launch, then
+            // periodic checks; MaybeNudge rate-limits to once per day.
+            DispatcherTimer.RunOnce(MaybeNudge, TimeSpan.FromMinutes(2));
+            _nudgeTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(30) };
+            _nudgeTimer.Tick += (_, _) => MaybeNudge();
+            _nudgeTimer.Start();
+
             desktop.MainWindow = _mainWindow;
 
             desktop.ShutdownRequested += (_, _) =>
             {
+                _hotkey?.Dispose();
                 try { _apiServer.StopAsync().GetAwaiter().GetResult(); }
                 catch { /* best effort on shutdown */ }
                 Updater.ApplyOnExitIfReady();
@@ -78,7 +100,7 @@ public class App : Application
         openItem.Click += (_, _) => ShowMainWindow();
 
         var captureItem = new NativeMenuItem("Quick capture…");
-        captureItem.Click += (_, _) => new QuickCaptureWindow(_store!).Show();
+        captureItem.Click += (_, _) => ShowQuickCapture();
 
         var resurfaceItem = new NativeMenuItem("Resurface…");
         resurfaceItem.Click += (_, _) => ShowMainWindow(tabIndex: 3);
@@ -120,6 +142,42 @@ public class App : Application
         _mainWindow.Show();
         _mainWindow.WindowState = WindowState.Normal;
         _mainWindow.Activate();
+    }
+
+    private void ShowQuickCapture()
+    {
+        if (_store is null) return;
+        if (_quickCapture is { IsVisible: true })
+        {
+            _quickCapture.Activate();
+            return;
+        }
+        _quickCapture = new QuickCaptureWindow(_store);
+        _quickCapture.Closed += (_, _) => _quickCapture = null;
+        _quickCapture.Show();
+    }
+
+    private void MaybeNudge()
+    {
+        if (_store is null) return;
+
+        var stale = _store.GetStaleProjects();
+        if (stale.Count == 0) return;
+
+        // At most one nudge per day; a reminder, not a nag.
+        var last = _store.GetSetting("LastNudgeAt");
+        if (last is not null
+            && DateTimeOffset.TryParse(last, out var lastAt)
+            && DateTimeOffset.UtcNow - lastAt < TimeSpan.FromHours(20))
+            return;
+
+        _store.SetSetting("LastNudgeAt", DateTimeOffset.UtcNow.ToString("O"));
+
+        var message = stale.Count == 1
+            ? $"\"{stale[0].Name}\" has been quiet for {stale[0].DaysSinceTouch} days. Want to peek at its next action?"
+            : $"{stale.Count} projects are waiting to resurface. Want to peek?";
+
+        new NudgeWindow(message, () => ShowMainWindow(tabIndex: 3)).Show();
     }
 
     private void UpdateTrayTooltip()

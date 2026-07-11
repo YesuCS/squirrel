@@ -253,6 +253,17 @@
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
+
+            <!-- ================= MANUAL ================= -->
+            <TabItem Header="Manual">
+                <ScrollViewer>
+                    <SelectableTextBlock Margin="4,16" MaxWidth="760"
+                                         HorizontalAlignment="Left"
+                                         TextWrapping="Wrap"
+                                         LineHeight="22"
+                                         Text="{Binding ManualText, Mode=OneTime}" />
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
     </DockPanel>
 </Window>

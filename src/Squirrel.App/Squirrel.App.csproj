@@ -21,6 +21,7 @@
     <PackageReference Include="Avalonia.Diagnostics" Version="11.2.3" Condition="'$(Configuration)' == 'Debug'" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Velopack" Version="0.0.*" />
+    <PackageReference Include="SharpHook" Version="5.*" />
   </ItemGroup>
 
   <ItemGroup>

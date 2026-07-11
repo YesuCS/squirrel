@@ -54,6 +54,19 @@ curl -X POST http://127.0.0.1:53595/capture \
 All routes except `/health` require the `X-Api-Key` header. The server binds to
 127.0.0.1 only; it is not reachable from the network.
 
+## Global hotkey and nudges
+
+Ctrl+Shift+Space summons quick capture from anywhere, whatever app has focus
+(macOS needs Accessibility permission; most Wayland sessions block global
+hooks, so use the tray there). When projects go quiet past the stale
+threshold, Squirrel shows one small corner nudge at most once per day; it
+never steals focus and dismisses itself.
+
+## Manual
+
+The full user manual ships inside the app (Manual tab) and lives at
+`src/Squirrel.App/Assets/MANUAL.md`.
+
 ## Living in the tray
 
 Closing the window doesn't quit Squirrel; it tucks into the system tray (menu
