@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:md="https://github.com/whistyun/Markdown.Avalonia"
         xmlns:vm="using:Squirrel.App.ViewModels"
         x:Class="Squirrel.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
@@ -57,6 +58,15 @@
                                 </StackPanel>
                             </Border>
 
+                            <Border Classes="card"
+                                    IsVisible="{Binding SuggestedProject.HasDescription, FallbackValue=False}">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="muted" Text="PROJECT NOTES" />
+                                    <md:MarkdownScrollViewer MaxHeight="200"
+                                            Markdown="{Binding SuggestedProject.Description, FallbackValue=''}" />
+                                </StackPanel>
+                            </Border>
+
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Content="Let's do this" Command="{Binding AcceptSuggestionCommand}" />
                                 <Button Content="Something else" Command="{Binding NextSuggestionCommand}" />
@@ -78,6 +88,15 @@
                                     <TextBlock FontSize="16" Opacity="0.7"
                                                IsVisible="{Binding FocusProject.NeedsNextAction, FallbackValue=False}"
                                                Text="No next action set. Type the smallest possible step below and save it." />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Classes="card"
+                                    IsVisible="{Binding FocusProject.HasDescription, FallbackValue=False}">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="muted" Text="PROJECT NOTES" />
+                                    <md:MarkdownScrollViewer MaxHeight="280"
+                                            Markdown="{Binding FocusProject.Description, FallbackValue=''}" />
                                 </StackPanel>
                             </Border>
 
@@ -144,6 +163,9 @@
                                 <TextBox Watermark="Project name" Text="{Binding NewProjectName}" />
                                 <TextBox Watermark="The one next action (small enough to do in one sitting)"
                                          Text="{Binding NewProjectNextAction}" />
+                                <TextBox Watermark="Description (optional, markdown; links render on the Now tab)"
+                                         AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"
+                                         Text="{Binding NewProjectDescription}" />
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0"
                                                Text="{Binding NewProjectPriority, StringFormat='Priority {0:0}'}" />
@@ -195,6 +217,10 @@
 
                                             <Expander Header="{Binding PlanHeader}">
                                                 <StackPanel Spacing="8" Margin="0,8,0,0">
+                                                    <TextBlock Classes="muted" Text="DESCRIPTION (MARKDOWN; RENDERS ON THE NOW TAB; SAVE WITH THE SAVE BUTTON)" />
+                                                    <TextBox AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"
+                                                             Watermark="Links, context, where the bodies are buried…"
+                                                             Text="{Binding DescriptionDraft}" />
                                                     <DockPanel>
                                                         <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Queue it"
                                                                 Command="{Binding #Root.((vm:MainViewModel)DataContext).AddQueuedStepCommand}"

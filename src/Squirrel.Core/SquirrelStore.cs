@@ -264,14 +264,21 @@ public class SquirrelStore
         UpdateProject(p);
     }
 
-    /// <summary>Update next action, priority, and due date together; resets staleness.</summary>
-    public void UpdateProjectMeta(string projectId, string nextAction, int priority, DateTimeOffset? dueDate)
+    /// <summary>
+    /// Update next action, priority, due date, and (optionally) the markdown
+    /// description together; resets staleness. Pass null notes to keep them.
+    /// </summary>
+    public void UpdateProjectMeta(
+        string projectId, string nextAction, int priority,
+        DateTimeOffset? dueDate, string? notes = null)
     {
         var p = GetProject(projectId);
         if (p is null) return;
         p.NextAction = nextAction.Trim();
         p.Priority = Math.Clamp(priority, 1, 10);
         p.DueDate = dueDate;
+        if (notes is not null)
+            p.Notes = notes;
         p.LastTouchedAt = DateTimeOffset.UtcNow;
         UpdateProject(p);
     }

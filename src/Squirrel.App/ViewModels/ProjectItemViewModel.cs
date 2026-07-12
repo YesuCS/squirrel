@@ -20,6 +20,9 @@ public partial class ProjectItemViewModel : ObservableObject
     [ObservableProperty]
     private string newStepDraft = "";
 
+    [ObservableProperty]
+    private string descriptionDraft;
+
     public ObservableCollection<QueuedItemViewModel> Queue { get; } = new();
     public ObservableCollection<HistoryItemViewModel> History { get; } = new();
 
@@ -32,6 +35,7 @@ public partial class ProjectItemViewModel : ObservableObject
         nextActionDraft = model.NextAction;
         priorityDraft = model.Priority;
         dueDateDraft = model.DueDate;
+        descriptionDraft = model.Notes;
         IsStale = model.Status == ProjectStatus.Active && model.DaysSinceTouch >= staleDays;
 
         if (queue is not null)
@@ -46,6 +50,10 @@ public partial class ProjectItemViewModel : ObservableObject
     public int WinCount => History.Count;
     public bool HasHistory => History.Count > 0;
 
+    /// <summary>Markdown description; rendered on the Now tab.</summary>
+    public string Description => Model.Notes;
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Model.Notes);
+
     public string PlanHeader
     {
         get
@@ -54,7 +62,7 @@ public partial class ProjectItemViewModel : ObservableObject
             parts.Add(Queue.Count == 1 ? "1 step queued" : $"{Queue.Count} steps queued");
             if (History.Count > 0)
                 parts.Add(History.Count == 1 ? "1 step done" : $"{History.Count} steps done");
-            return "Up next & wins · " + string.Join(" · ", parts);
+            return "Details & plan · " + string.Join(" · ", parts);
         }
     }
 

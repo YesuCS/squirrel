@@ -38,7 +38,8 @@ nothing is in focus, Squirrel offers its best suggestion (the most urgent
 project by priority, due date, and neglect) with three easy outs: "Let's do
 this" locks it in, "Something else" offers the next candidate, "I'll pick
 myself" jumps to the Projects tab. Once something is in focus, Now shows
-that project and its single next action, nothing else. When you finish the
+that project, its single next action, and its rendered markdown notes with
+clickable links (your launchpad into the work). When you finish the
 step, type the next tiny step and press "Done, swap it in"; the finished
 step is written to that project's win history. Leave the box empty and
 Squirrel pulls the next step from the project's up-next queue instead.
@@ -62,6 +63,12 @@ Priority is required (new projects start at 5): 1 means "someday, honestly",
 10 means "this is the thing". The due date is optional on purpose; deadlines
 create urgency, and their absence creates freedom. Give real deadlines to the
 things that have them and let hobby projects breathe.
+
+Each project can also carry a description written in markdown (edit it under
+Details & plan; save with the card's Save button). It renders on the Now tab
+with clickable links, so put the launchpad there: the repo URL, the doc
+you're writing in, the staging site, the exact file to open. Future you
+should be able to click straight into the work without hunting for anything.
 
 RESURFACE shows active projects that have gone quiet past your threshold
 (default 7 days, adjustable in Settings). This is not a list of failures; it

@@ -33,6 +33,9 @@ public partial class MainViewModel : ObservableObject
     private double newProjectPriority = 5;
 
     [ObservableProperty]
+    private string newProjectDescription = "";
+
+    [ObservableProperty]
     private DateTimeOffset? newProjectDueDate;
 
     [ObservableProperty]
@@ -200,10 +203,12 @@ public partial class MainViewModel : ObservableObject
         if (string.IsNullOrWhiteSpace(NewProjectName)) return;
         _store.AddProject(
             NewProjectName, NewProjectNextAction,
+            notes: NewProjectDescription,
             priority: (int)Math.Round(NewProjectPriority),
             dueDate: NewProjectDueDate);
         NewProjectName = "";
         NewProjectNextAction = "";
+        NewProjectDescription = "";
         NewProjectPriority = 5;
         NewProjectDueDate = null;
     }
@@ -211,12 +216,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ClearNewDueDate() => NewProjectDueDate = null;
 
-    /// <summary>Save a project card's edits: next action, priority, due date.</summary>
+    /// <summary>Save a project card's edits: next action, priority, due date, description.</summary>
     [RelayCommand]
     private void SaveProject(ProjectItemViewModel p) =>
         _store.UpdateProjectMeta(
             p.Id, p.NextActionDraft,
-            (int)Math.Round(p.PriorityDraft), p.DueDateDraft);
+            (int)Math.Round(p.PriorityDraft), p.DueDateDraft,
+            p.DescriptionDraft);
 
     [RelayCommand]
     private void ClearDueDate(ProjectItemViewModel p) => p.DueDateDraft = null;
