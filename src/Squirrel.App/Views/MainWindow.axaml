@@ -12,7 +12,7 @@
     <DockPanel Margin="16">
 
         <!-- Always-visible capture bar: the shiny idea goes here, then back to work. -->
-        <Border DockPanel.Dock="Top" Classes="card" Background="#3320A060">
+        <Border DockPanel.Dock="Top" Classes="card" Background="{DynamicResource CaptureCardBrush}">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Margin="8,0,0,0"
                         Content="Catch it"
@@ -33,10 +33,35 @@
                 <ScrollViewer>
                     <StackPanel Margin="0,12" Spacing="8" MaxWidth="640">
 
-                        <StackPanel IsVisible="{Binding HasNoFocus}" Spacing="10">
-                            <TextBlock Classes="h1" Text="Nothing in focus." />
+                        <StackPanel IsVisible="{Binding ShowEmpty}" Spacing="10">
+                            <TextBlock Classes="h1" Text="Nothing in flight yet." />
                             <TextBlock TextWrapping="Wrap"
-                                       Text="Pick ONE project to be your Now. Everything else stays out of sight. Go to the Projects tab and hit Focus on one." />
+                                       Text="Catch an idea in the bar above or add a project; Squirrel will start offering you a place to begin." />
+                        </StackPanel>
+
+                        <StackPanel IsVisible="{Binding ShowSuggestion}" Spacing="14">
+                            <TextBlock Classes="muted" Text="HOW ABOUT THIS ONE?" />
+                            <TextBlock Classes="h1" TextWrapping="Wrap"
+                                       Text="{Binding SuggestedProject.Name, FallbackValue=''}" />
+                            <TextBlock Classes="muted" Text="{Binding SuggestedMeta}" />
+
+                            <Border Classes="card">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="muted" Text="ITS NEXT ACTION" />
+                                    <TextBlock FontSize="20" TextWrapping="Wrap"
+                                               IsVisible="{Binding SuggestedProject.HasNextAction, FallbackValue=False}"
+                                               Text="{Binding SuggestedProject.NextAction, FallbackValue=''}" />
+                                    <TextBlock FontSize="16" Opacity="0.7" TextWrapping="Wrap"
+                                               IsVisible="{Binding SuggestedProject.NeedsNextAction, FallbackValue=False}"
+                                               Text="No next action recorded yet; deciding the first tiny step IS the step." />
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Let's do this" Command="{Binding AcceptSuggestionCommand}" />
+                                <Button Content="Something else" Command="{Binding NextSuggestionCommand}" />
+                                <Button Content="I'll pick myself" Command="{Binding GoToProjectsCommand}" />
+                            </StackPanel>
                         </StackPanel>
 
                         <StackPanel IsVisible="{Binding HasFocus}" Spacing="14">
@@ -117,6 +142,20 @@
                                 <TextBox Watermark="Project name" Text="{Binding NewProjectName}" />
                                 <TextBox Watermark="The one next action (small enough to do in one sitting)"
                                          Text="{Binding NewProjectNextAction}" />
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0"
+                                               Text="{Binding NewProjectPriority, StringFormat='Priority {0:0}'}" />
+                                    <Slider Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            Value="{Binding NewProjectPriority}" />
+                                </DockPanel>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0"
+                                               Text="Due (optional)" />
+                                    <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Clear"
+                                            Command="{Binding ClearNewDueDateCommand}" />
+                                    <DatePicker SelectedDate="{Binding NewProjectDueDate, Mode=TwoWay}"
+                                                HorizontalAlignment="Stretch" />
+                                </DockPanel>
                                 <Button Content="Add project" HorizontalAlignment="Right"
                                         Command="{Binding AddProjectCommand}" />
                             </StackPanel>
@@ -132,13 +171,24 @@
                                                            Text="{Binding StatusText}" />
                                                 <TextBlock Classes="h2" Text="{Binding Name}" TextWrapping="Wrap" />
                                             </DockPanel>
-                                            <TextBlock Classes="muted" Text="{Binding TouchedText}" />
+                                            <TextBlock Classes="muted" Text="{Binding MetaText}" />
+                                            <TextBox Watermark="Next action…"
+                                                     Text="{Binding NextActionDraft}" />
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0"
+                                                           Text="{Binding PriorityDraft, StringFormat='Priority {0:0}'}" />
+                                                <Slider Minimum="1" Maximum="10" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                        Value="{Binding PriorityDraft}" />
+                                            </DockPanel>
                                             <DockPanel>
                                                 <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Save"
-                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).SaveNextActionCommand}"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).SaveProjectCommand}"
                                                         CommandParameter="{Binding}" />
-                                                <TextBox Watermark="Next action…"
-                                                         Text="{Binding NextActionDraft}" />
+                                                <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="No due date"
+                                                        Command="{Binding #Root.((vm:MainViewModel)DataContext).ClearDueDateCommand}"
+                                                        CommandParameter="{Binding}" />
+                                                <DatePicker SelectedDate="{Binding DueDateDraft, Mode=TwoWay}"
+                                                            HorizontalAlignment="Stretch" />
                                             </DockPanel>
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <Button Content="Focus"
@@ -178,7 +228,7 @@
                         <ItemsControl ItemsSource="{Binding StaleProjects}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ProjectItemViewModel">
-                                    <Border Classes="card" Background="#33A07020">
+                                    <Border Classes="card" Background="{DynamicResource StaleCardBrush}">
                                         <StackPanel Spacing="6">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Right" Classes="muted"
@@ -232,6 +282,16 @@
 
                         <Border Classes="card">
                             <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="Appearance" />
+                                <TextBlock Classes="muted" Text="Light, dark, or follow the system." />
+                                <ComboBox ItemsSource="{Binding ThemeOptions}"
+                                          SelectedItem="{Binding SelectedTheme}"
+                                          MinWidth="180" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
                                 <TextBlock Classes="h2" Text="Resurfacing" />
                                 <TextBlock Classes="muted" TextWrapping="Wrap"
                                            Text="A project is considered stale after this many days without a touch." />
@@ -250,18 +310,17 @@
                                 <TextBox IsReadOnly="True" Text="{Binding DbPath, Mode=OneTime}" />
                             </StackPanel>
                         </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
 
-            <!-- ================= MANUAL ================= -->
-            <TabItem Header="Manual">
-                <ScrollViewer>
-                    <SelectableTextBlock Margin="4,16" MaxWidth="760"
-                                         HorizontalAlignment="Left"
-                                         TextWrapping="Wrap"
-                                         LineHeight="22"
-                                         Text="{Binding ManualText, Mode=OneTime}" />
+                        <Border Classes="card">
+                            <StackPanel Spacing="8">
+                                <TextBlock Classes="h2" Text="Help" />
+                                <TextBlock Classes="muted" TextWrapping="Wrap"
+                                           Text="How Squirrel works and why it's shaped this way." />
+                                <Button Content="Open the manual"
+                                        Command="{Binding OpenManualCommand}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
         </TabControl>

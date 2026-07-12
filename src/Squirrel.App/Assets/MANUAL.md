@@ -32,21 +32,33 @@ You can also capture over HTTP; see SENDING TASKS FROM ANYWHERE below.
 
 THE TABS
 
-NOW is home. It shows the one project you chose to focus on and its single
-next action, nothing else. When you finish the step, type the next tiny step
-in the box and press "Done, swap it in". That keeps a fresh re-entry point
-waiting for you at all times. "I worked on this" records progress without
-changing the step. "Clear focus" steps away without judgment.
+NOW is home, and it never opens with a blank "choose something" wall; making
+you choose from scratch would be handing the hardest part back to you. If
+nothing is in focus, Squirrel offers its best suggestion (the most urgent
+project by priority, due date, and neglect) with three easy outs: "Let's do
+this" locks it in, "Something else" offers the next candidate, "I'll pick
+myself" jumps to the Projects tab. Once something is in focus, Now shows
+that project and its single next action, nothing else. When you finish the
+step, type the next tiny step and press "Done, swap it in". "I worked on
+this" records progress without changing the step. "Clear focus" steps away
+without judgment.
 
 INBOX holds everything you have caught. When you have a spare moment (not
 right when you capture), triage: "→ Project" turns an idea into a real
 project; "Dismiss" lets it go. An idea that stops being exciting was still
 worth catching.
 
-PROJECTS lists everything active or parked. Each card shows the project's one
-next action (editable; Save updates it), how long since you touched it, and
-buttons: Focus makes it your Now; Touch says "still alive"; Park shelves it
-on purpose; Done celebrates and archives it; Delete removes it entirely.
+PROJECTS lists everything active or parked, ordered by urgency (see HOW
+SQUIRREL DECIDES WHAT'S URGENT below). Each card shows the one next action,
+a priority slider from 1 to 10, and an optional due date, all saved together
+with the Save button. Buttons: Focus makes it your Now; Touch says "still
+alive"; Park shelves it on purpose; Done celebrates and archives it; Delete
+removes it entirely.
+
+Priority is required (new projects start at 5): 1 means "someday, honestly",
+10 means "this is the thing". The due date is optional on purpose; deadlines
+create urgency, and their absence creates freedom. Give real deadlines to the
+things that have them and let hobby projects breathe.
 
 RESURFACE shows active projects that have gone quiet past your threshold
 (default 7 days, adjustable in Settings). This is not a list of failures; it
@@ -54,10 +66,20 @@ is your past self waving hello. For each one: "Focus on this" re-enters
 through the next action, "Still alive" resets the clock, "Park it,
 guilt-free" shelves it consciously. Parking is a decision, not a defeat.
 
-SETTINGS holds the API details, the stale-day threshold, and the location of
-your data file.
+SETTINGS holds the theme (light, dark, or follow the system), the API
+details, the stale-day threshold, the location of your data file, and the
+button that opens this manual.
 
-MANUAL is this document.
+
+HOW SQUIRREL DECIDES WHAT'S URGENT
+
+Every project gets an urgency score. Priority (1 to 10) is the base. An
+approaching due date adds pressure sharply: within two weeks it starts to
+count, within a week it counts a lot, due tomorrow or overdue dominates
+almost everything. Days without a touch add a small nudge so neglected work
+wins ties. The score orders the Projects tab and picks the Now suggestion,
+which is how "juggling" happens automatically: as a deadline approaches, that
+project climbs the list and starts being offered, before it becomes a crisis.
 
 
 ONE NEXT ACTION, THE RULE THAT MATTERS MOST
@@ -89,7 +111,7 @@ Routes:
     GET  /inbox                       unprocessed items
     GET  /projects                    active and parked projects
     GET  /projects/stale              projects past the threshold
-    POST /projects                    {name, nextAction?, notes?}
+    POST /projects                    {name, nextAction?, notes?, priority?, dueDate?}
     POST /projects/{id}/touch         mark worked-on now
     POST /projects/{id}/next-action   {nextAction}
 

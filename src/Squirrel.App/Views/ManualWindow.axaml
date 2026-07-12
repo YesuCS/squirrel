@@ -1,0 +1,16 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Squirrel.App.Views.ManualWindow"
+        Title="Squirrel manual"
+        Icon="/Assets/squirrel.png"
+        Width="840" Height="640"
+        MinWidth="480" MinHeight="360">
+
+    <ScrollViewer Padding="24">
+        <SelectableTextBlock x:Name="ManualBlock"
+                             MaxWidth="760"
+                             HorizontalAlignment="Left"
+                             TextWrapping="Wrap"
+                             LineHeight="22" />
+    </ScrollViewer>
+</Window>

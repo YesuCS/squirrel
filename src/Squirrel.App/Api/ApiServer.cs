@@ -79,7 +79,18 @@ public class ApiServer
         {
             if (string.IsNullOrWhiteSpace(req.Name))
                 return Results.BadRequest(new { error = "name is required" });
-            var p = _store.AddProject(req.Name, req.NextAction ?? "", req.Notes ?? "");
+
+            DateTimeOffset? due = null;
+            if (!string.IsNullOrWhiteSpace(req.DueDate))
+            {
+                if (!DateTimeOffset.TryParse(req.DueDate, out var parsed))
+                    return Results.BadRequest(new { error = "dueDate must be a valid date, e.g. 2026-08-01" });
+                due = parsed;
+            }
+
+            var p = _store.AddProject(
+                req.Name, req.NextAction ?? "", req.Notes ?? "",
+                req.Priority ?? 5, due);
             return Results.Json(ProjectDto(p), statusCode: 201);
         });
 
@@ -114,12 +125,17 @@ public class ApiServer
         p.NextAction,
         p.Notes,
         Status = p.Status.ToString(),
+        p.Priority,
+        p.DueDate,
+        p.DaysUntilDue,
+        p.IsOverdue,
+        p.Score,
         p.CreatedAt,
         p.LastTouchedAt,
         p.DaysSinceTouch
     };
 
     public record CaptureRequest(string? Text, string? Source);
-    public record ProjectRequest(string? Name, string? NextAction, string? Notes);
+    public record ProjectRequest(string? Name, string? NextAction, string? Notes, int? Priority, string? DueDate);
     public record NextActionRequest(string? NextAction);
 }

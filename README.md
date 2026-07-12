@@ -62,10 +62,24 @@ hooks, so use the tray there). When projects go quiet past the stale
 threshold, Squirrel shows one small corner nudge at most once per day; it
 never steals focus and dismisses itself.
 
+## Priorities, due dates, and the Now suggestion
+
+Every project carries a required priority (1-10, default 5) and an optional
+due date. An urgency score (priority + due-date pressure + a small neglect
+nudge) orders the Projects tab, and when nothing is in focus the Now tab
+offers the top candidate instead of asking you to choose: "Let's do this",
+"Something else", or "I'll pick myself".
+
 ## Manual
 
-The full user manual ships inside the app (Manual tab) and lives at
-`src/Squirrel.App/Assets/MANUAL.md`.
+The full user manual ships inside the app (Settings > Open the manual) and
+lives at `src/Squirrel.App/Assets/MANUAL.md`.
+
+## macOS .app
+
+CI builds a proper `Squirrel.app` bundle (with the .icns icon) via Velopack.
+To build one locally on a Mac: `dotnet tool install -g vpk` once, then
+`./scripts/make-app.sh`; the bundle lands in `./Releases`.
 
 ## Living in the tray
 

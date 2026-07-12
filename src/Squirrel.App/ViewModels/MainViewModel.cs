@@ -1,8 +1,9 @@
 using System.Collections.ObjectModel;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Squirrel.App.Api;
+using Squirrel.App.Views;
 using Squirrel.Core;
 
 namespace Squirrel.App.ViewModels;
@@ -10,6 +11,7 @@ namespace Squirrel.App.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly SquirrelStore _store;
+    private int _suggestionOffset;
 
     public ObservableCollection<InboxItemViewModel> Inbox { get; } = new();
     public ObservableCollection<ProjectItemViewModel> Projects { get; } = new();
@@ -28,14 +30,32 @@ public partial class MainViewModel : ObservableObject
     private string newProjectNextAction = "";
 
     [ObservableProperty]
+    private double newProjectPriority = 5;
+
+    [ObservableProperty]
+    private DateTimeOffset? newProjectDueDate;
+
+    [ObservableProperty]
     private ProjectItemViewModel? focusProject;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasNoFocus))]
     private bool hasFocus;
 
     [ObservableProperty]
     private string focusNextStepDraft = "";
+
+    // Now-tab suggestion: Squirrel opens with an offer, never a blank choice.
+    [ObservableProperty]
+    private ProjectItemViewModel? suggestedProject;
+
+    [ObservableProperty]
+    private bool showSuggestion;
+
+    [ObservableProperty]
+    private bool showEmpty;
+
+    [ObservableProperty]
+    private string suggestedMeta = "";
 
     [ObservableProperty]
     private string inboxTabHeader = "Inbox";
@@ -46,7 +66,10 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string staleDaysText = "7";
 
-    public bool HasNoFocus => !HasFocus;
+    [ObservableProperty]
+    private string selectedTheme;
+
+    public string[] ThemeOptions { get; } = { "System", "Light", "Dark" };
 
     public string ApiBaseUrl { get; }
     public string ApiKey { get; }
@@ -67,6 +90,7 @@ public partial class MainViewModel : ObservableObject
             "  -d '{\"text\":\"your idea here\",\"source\":\"curl\"}'";
 
         staleDaysText = store.StaleDays.ToString();
+        selectedTheme = store.GetSetting("Theme") ?? "System";
         ManualText = LoadManual();
 
         // Refresh the UI whenever anything writes to the store,
@@ -113,6 +137,33 @@ public partial class MainViewModel : ObservableObject
             ? null
             : Projects.FirstOrDefault(p => p.Id == focusId);
         HasFocus = FocusProject is not null;
+
+        UpdateSuggestion();
+    }
+
+    /// <summary>
+    /// With no focus set, offer the highest-urgency active project instead of
+    /// presenting a blank "choose something" wall. "Something else" cycles
+    /// down the urgency-sorted list.
+    /// </summary>
+    private void UpdateSuggestion()
+    {
+        var active = Projects.Where(p => p.IsActive).ToList();
+
+        ShowEmpty = !HasFocus && active.Count == 0;
+
+        if (HasFocus || active.Count == 0)
+        {
+            SuggestedProject = null;
+            ShowSuggestion = false;
+            SuggestedMeta = "";
+            return;
+        }
+
+        var index = ((_suggestionOffset % active.Count) + active.Count) % active.Count;
+        SuggestedProject = active[index];  // Projects is already urgency-sorted
+        SuggestedMeta = SuggestedProject.MetaText;
+        ShowSuggestion = true;
     }
 
     // ---------- Capture ----------
@@ -139,14 +190,28 @@ public partial class MainViewModel : ObservableObject
     private void AddProject()
     {
         if (string.IsNullOrWhiteSpace(NewProjectName)) return;
-        _store.AddProject(NewProjectName, NewProjectNextAction);
+        _store.AddProject(
+            NewProjectName, NewProjectNextAction,
+            priority: (int)Math.Round(NewProjectPriority),
+            dueDate: NewProjectDueDate);
         NewProjectName = "";
         NewProjectNextAction = "";
+        NewProjectPriority = 5;
+        NewProjectDueDate = null;
     }
 
     [RelayCommand]
-    private void SaveNextAction(ProjectItemViewModel p) =>
-        _store.SetNextAction(p.Id, p.NextActionDraft);
+    private void ClearNewDueDate() => NewProjectDueDate = null;
+
+    /// <summary>Save a project card's edits: next action, priority, due date.</summary>
+    [RelayCommand]
+    private void SaveProject(ProjectItemViewModel p) =>
+        _store.UpdateProjectMeta(
+            p.Id, p.NextActionDraft,
+            (int)Math.Round(p.PriorityDraft), p.DueDateDraft);
+
+    [RelayCommand]
+    private void ClearDueDate(ProjectItemViewModel p) => p.DueDateDraft = null;
 
     [RelayCommand]
     private void TouchProject(ProjectItemViewModel p) =>
@@ -178,6 +243,23 @@ public partial class MainViewModel : ObservableObject
     private void ClearFocus() =>
         _store.FocusProjectId = null;
 
+    [RelayCommand]
+    private void AcceptSuggestion()
+    {
+        if (SuggestedProject is not null)
+            _store.FocusProjectId = SuggestedProject.Id;
+    }
+
+    [RelayCommand]
+    private void NextSuggestion()
+    {
+        _suggestionOffset++;
+        UpdateSuggestion();
+    }
+
+    [RelayCommand]
+    private void GoToProjects() => SelectedTabIndex = 2;
+
     /// <summary>
     /// "I did the thing." Records the win by touching the project and swaps
     /// in the next tiny step you typed; keeps the momentum loop going.
@@ -204,5 +286,26 @@ public partial class MainViewModel : ObservableObject
     {
         if (int.TryParse(StaleDaysText, out var days) && days > 0)
             _store.StaleDays = days;
+    }
+
+    [RelayCommand]
+    private void OpenManual() => new ManualWindow(ManualText).Show();
+
+    partial void OnSelectedThemeChanged(string value)
+    {
+        _store.SetSetting("Theme", value);
+        ApplyTheme(value);
+    }
+
+    public static void ApplyTheme(string theme)
+    {
+        var app = Avalonia.Application.Current;
+        if (app is null) return;
+        app.RequestedThemeVariant = theme switch
+        {
+            "Light" => ThemeVariant.Light,
+            "Dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default
+        };
     }
 }

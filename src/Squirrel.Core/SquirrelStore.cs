@@ -50,6 +50,8 @@ public class SquirrelStore
                 Notes         TEXT NOT NULL DEFAULT '',
                 NextAction    TEXT NOT NULL DEFAULT '',
                 Status        INTEGER NOT NULL DEFAULT 0,
+                Priority      INTEGER NOT NULL DEFAULT 5,
+                DueDate       TEXT NULL,
                 CreatedAt     TEXT NOT NULL,
                 LastTouchedAt TEXT NOT NULL
             );
@@ -66,10 +68,30 @@ public class SquirrelStore
             );
             """);
 
+        MigrateProjectColumns(conn);
+
         if (GetSetting("ApiKey") is null)
             SetSettingInternal("ApiKey", GenerateApiKey());
         if (GetSetting("StaleDays") is null)
             SetSettingInternal("StaleDays", "7");
+    }
+
+    /// <summary>Adds columns introduced after the first release to older databases.</summary>
+    private static void MigrateProjectColumns(SqliteConnection conn)
+    {
+        var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = "PRAGMA table_info(Project)";
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                existing.Add(reader.GetString(reader.GetOrdinal("name")));
+        }
+
+        if (!existing.Contains("Priority"))
+            Exec(conn, "ALTER TABLE Project ADD COLUMN Priority INTEGER NOT NULL DEFAULT 5");
+        if (!existing.Contains("DueDate"))
+            Exec(conn, "ALTER TABLE Project ADD COLUMN DueDate TEXT NULL");
     }
 
     private static string GenerateApiKey()
@@ -130,13 +152,18 @@ public class SquirrelStore
         using var conn = Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = includeDone
-            ? "SELECT * FROM Project ORDER BY LastTouchedAt DESC"
-            : "SELECT * FROM Project WHERE Status != 2 ORDER BY LastTouchedAt DESC";
+            ? "SELECT * FROM Project"
+            : "SELECT * FROM Project WHERE Status != 2";
         using var reader = cmd.ExecuteReader();
         var list = new List<Project>();
         while (reader.Read())
             list.Add(ReadProject(reader));
-        return list;
+
+        // Active first, then parked, then done; urgency score within each.
+        return list
+            .OrderBy(p => p.Status)
+            .ThenByDescending(p => p.Score)
+            .ToList();
     }
 
     public Project? GetProject(string id)
@@ -159,21 +186,32 @@ public class SquirrelStore
             .ToList();
     }
 
-    public Project AddProject(string name, string nextAction = "", string notes = "")
+    public Project AddProject(
+        string name, string nextAction = "", string notes = "",
+        int priority = 5, DateTimeOffset? dueDate = null)
     {
-        var p = new Project { Name = name.Trim(), NextAction = nextAction.Trim(), Notes = notes };
+        var p = new Project
+        {
+            Name = name.Trim(),
+            NextAction = nextAction.Trim(),
+            Notes = notes,
+            Priority = Math.Clamp(priority, 1, 10),
+            DueDate = dueDate
+        };
         using (var conn = Open())
         {
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
-                INSERT INTO Project (Id, Name, Notes, NextAction, Status, CreatedAt, LastTouchedAt)
-                VALUES ($id, $name, $notes, $next, $status, $created, $touched)
+                INSERT INTO Project (Id, Name, Notes, NextAction, Status, Priority, DueDate, CreatedAt, LastTouchedAt)
+                VALUES ($id, $name, $notes, $next, $status, $priority, $due, $created, $touched)
                 """;
             cmd.Parameters.AddWithValue("$id", p.Id);
             cmd.Parameters.AddWithValue("$name", p.Name);
             cmd.Parameters.AddWithValue("$notes", p.Notes);
             cmd.Parameters.AddWithValue("$next", p.NextAction);
             cmd.Parameters.AddWithValue("$status", (int)p.Status);
+            cmd.Parameters.AddWithValue("$priority", p.Priority);
+            cmd.Parameters.AddWithValue("$due", (object?)p.DueDate?.ToString("O") ?? DBNull.Value);
             cmd.Parameters.AddWithValue("$created", p.CreatedAt.ToString("O"));
             cmd.Parameters.AddWithValue("$touched", p.LastTouchedAt.ToString("O"));
             cmd.ExecuteNonQuery();
@@ -189,7 +227,7 @@ public class SquirrelStore
             using var cmd = conn.CreateCommand();
             cmd.CommandText = """
                 UPDATE Project SET Name = $name, Notes = $notes, NextAction = $next,
-                    Status = $status, LastTouchedAt = $touched
+                    Status = $status, Priority = $priority, DueDate = $due, LastTouchedAt = $touched
                 WHERE Id = $id
                 """;
             cmd.Parameters.AddWithValue("$id", p.Id);
@@ -197,6 +235,8 @@ public class SquirrelStore
             cmd.Parameters.AddWithValue("$notes", p.Notes);
             cmd.Parameters.AddWithValue("$next", p.NextAction);
             cmd.Parameters.AddWithValue("$status", (int)p.Status);
+            cmd.Parameters.AddWithValue("$priority", Math.Clamp(p.Priority, 1, 10));
+            cmd.Parameters.AddWithValue("$due", (object?)p.DueDate?.ToString("O") ?? DBNull.Value);
             cmd.Parameters.AddWithValue("$touched", p.LastTouchedAt.ToString("O"));
             cmd.ExecuteNonQuery();
         }
@@ -208,6 +248,18 @@ public class SquirrelStore
     {
         var p = GetProject(projectId);
         if (p is null) return;
+        p.LastTouchedAt = DateTimeOffset.UtcNow;
+        UpdateProject(p);
+    }
+
+    /// <summary>Update next action, priority, and due date together; resets staleness.</summary>
+    public void UpdateProjectMeta(string projectId, string nextAction, int priority, DateTimeOffset? dueDate)
+    {
+        var p = GetProject(projectId);
+        if (p is null) return;
+        p.NextAction = nextAction.Trim();
+        p.Priority = Math.Clamp(priority, 1, 10);
+        p.DueDate = dueDate;
         p.LastTouchedAt = DateTimeOffset.UtcNow;
         UpdateProject(p);
     }
@@ -252,6 +304,10 @@ public class SquirrelStore
         Notes = r.GetString(r.GetOrdinal("Notes")),
         NextAction = r.GetString(r.GetOrdinal("NextAction")),
         Status = (ProjectStatus)r.GetInt32(r.GetOrdinal("Status")),
+        Priority = r.GetInt32(r.GetOrdinal("Priority")),
+        DueDate = r.IsDBNull(r.GetOrdinal("DueDate"))
+            ? null
+            : DateTimeOffset.Parse(r.GetString(r.GetOrdinal("DueDate"))),
         CreatedAt = DateTimeOffset.Parse(r.GetString(r.GetOrdinal("CreatedAt"))),
         LastTouchedAt = DateTimeOffset.Parse(r.GetString(r.GetOrdinal("LastTouchedAt")))
     };

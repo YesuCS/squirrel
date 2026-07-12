@@ -13,15 +13,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14        # Apple Silicon
+          - os: macos-14        # Apple Silicon; produces a proper Squirrel.app bundle
             rid: osx-arm64
             exe: Squirrel.App
+            icon: src/Squirrel.App/Assets/squirrel.icns
           - os: windows-latest
             rid: win-x64
             exe: Squirrel.App.exe
+            icon: src/Squirrel.App/Assets/squirrel.ico
           - os: ubuntu-latest
             rid: linux-x64
             exe: Squirrel.App
+            icon: src/Squirrel.App/Assets/squirrel.png
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +56,7 @@ jobs:
           --packVersion "$VERSION"
           --packDir publish/${{ matrix.rid }}
           --mainExe ${{ matrix.exe }}
+          --icon ${{ matrix.icon }}
 
       - name: Upload to GitHub Release
         shell: bash

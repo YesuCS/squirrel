@@ -1,7 +1,23 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Squirrel.App.App"
-             RequestedThemeVariant="Dark">
+             x:Class="Squirrel.App.App">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="CardBrush" Color="#0D000000" />
+                    <SolidColorBrush x:Key="StaleCardBrush" Color="#26C08020" />
+                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#2620A060" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="CardBrush" Color="#20FFFFFF" />
+                    <SolidColorBrush x:Key="StaleCardBrush" Color="#33A07020" />
+                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#3320A060" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />
@@ -19,7 +35,7 @@
             <Setter Property="FontSize" Value="12" />
         </Style>
         <Style Selector="Border.card">
-            <Setter Property="Background" Value="#20FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource CardBrush}" />
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Padding" Value="14" />
             <Setter Property="Margin" Value="0,0,0,10" />

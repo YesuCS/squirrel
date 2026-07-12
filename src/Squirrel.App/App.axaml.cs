@@ -31,6 +31,7 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _store = new SquirrelStore();
+            MainViewModel.ApplyTheme(_store.GetSetting("Theme") ?? "System");
             _apiServer = new ApiServer(_store);
             _viewModel = new MainViewModel(_store, _apiServer.BaseUrl);
 
