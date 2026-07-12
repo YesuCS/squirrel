@@ -66,6 +66,18 @@ public class SquirrelStore
                 Key   TEXT PRIMARY KEY,
                 Value TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS ActionLog (
+                Id          TEXT PRIMARY KEY,
+                ProjectId   TEXT NOT NULL,
+                Text        TEXT NOT NULL,
+                CompletedAt TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS QueuedAction (
+                Id        TEXT PRIMARY KEY,
+                ProjectId TEXT NOT NULL,
+                Text      TEXT NOT NULL,
+                SortOrder INTEGER NOT NULL
+            );
             """);
 
         MigrateProjectColumns(conn);
@@ -288,13 +300,233 @@ public class SquirrelStore
         using (var conn = Open())
         {
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "DELETE FROM Project WHERE Id = $id";
+            cmd.CommandText = """
+                DELETE FROM Project WHERE Id = $id;
+                DELETE FROM ActionLog WHERE ProjectId = $id;
+                DELETE FROM QueuedAction WHERE ProjectId = $id;
+                """;
             cmd.Parameters.AddWithValue("$id", projectId);
             cmd.ExecuteNonQuery();
         }
         if (FocusProjectId == projectId)
             FocusProjectId = null;
         Changed?.Invoke();
+    }
+
+    // ---------- Completing steps, history, and the up-next queue ----------
+
+    /// <summary>
+    /// "I did the step." Logs the current next action to the win history,
+    /// then swaps in the replacement: the text you typed, or (when empty)
+    /// the top of the up-next queue, or nothing.
+    /// </summary>
+    public void CompleteNextAction(string projectId, string? newNextAction = null)
+    {
+        var p = GetProject(projectId);
+        if (p is null) return;
+
+        if (!string.IsNullOrWhiteSpace(p.NextAction))
+            InsertActionLog(projectId, p.NextAction);
+
+        var next = (newNextAction ?? "").Trim();
+        if (next.Length == 0)
+        {
+            var top = GetQueue(projectId).FirstOrDefault();
+            if (top is not null)
+            {
+                next = top.Text;
+                DeleteQueuedInternal(top.Id);
+            }
+        }
+
+        p.NextAction = next;
+        p.LastTouchedAt = DateTimeOffset.UtcNow;
+        UpdateProject(p);
+    }
+
+    public List<ActionLogEntry> GetHistory(string projectId)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM ActionLog WHERE ProjectId = $pid ORDER BY CompletedAt DESC";
+        cmd.Parameters.AddWithValue("$pid", projectId);
+        using var reader = cmd.ExecuteReader();
+        var list = new List<ActionLogEntry>();
+        while (reader.Read())
+        {
+            list.Add(new ActionLogEntry
+            {
+                Id = reader.GetString(reader.GetOrdinal("Id")),
+                ProjectId = reader.GetString(reader.GetOrdinal("ProjectId")),
+                Text = reader.GetString(reader.GetOrdinal("Text")),
+                CompletedAt = DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("CompletedAt")))
+            });
+        }
+        return list;
+    }
+
+    private void InsertActionLog(string projectId, string text)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            INSERT INTO ActionLog (Id, ProjectId, Text, CompletedAt)
+            VALUES ($id, $pid, $text, $at)
+            """;
+        cmd.Parameters.AddWithValue("$id", Guid.NewGuid().ToString("N"));
+        cmd.Parameters.AddWithValue("$pid", projectId);
+        cmd.Parameters.AddWithValue("$text", text.Trim());
+        cmd.Parameters.AddWithValue("$at", DateTimeOffset.UtcNow.ToString("O"));
+        cmd.ExecuteNonQuery();
+    }
+
+    public List<QueuedAction> GetQueue(string projectId)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM QueuedAction WHERE ProjectId = $pid ORDER BY SortOrder";
+        cmd.Parameters.AddWithValue("$pid", projectId);
+        using var reader = cmd.ExecuteReader();
+        var list = new List<QueuedAction>();
+        while (reader.Read())
+        {
+            list.Add(new QueuedAction
+            {
+                Id = reader.GetString(reader.GetOrdinal("Id")),
+                ProjectId = reader.GetString(reader.GetOrdinal("ProjectId")),
+                Text = reader.GetString(reader.GetOrdinal("Text")),
+                SortOrder = reader.GetInt32(reader.GetOrdinal("SortOrder"))
+            });
+        }
+        return list;
+    }
+
+    /// <summary>Add a future step to the end of a project's up-next queue.</summary>
+    public QueuedAction AddQueuedAction(string projectId, string text)
+    {
+        var queue = GetQueue(projectId);
+        var item = new QueuedAction
+        {
+            ProjectId = projectId,
+            Text = text.Trim(),
+            SortOrder = queue.Count == 0 ? 1 : queue[^1].SortOrder + 1
+        };
+        using (var conn = Open())
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO QueuedAction (Id, ProjectId, Text, SortOrder)
+                VALUES ($id, $pid, $text, $sort)
+                """;
+            cmd.Parameters.AddWithValue("$id", item.Id);
+            cmd.Parameters.AddWithValue("$pid", item.ProjectId);
+            cmd.Parameters.AddWithValue("$text", item.Text);
+            cmd.Parameters.AddWithValue("$sort", item.SortOrder);
+            cmd.ExecuteNonQuery();
+        }
+        Changed?.Invoke();
+        return item;
+    }
+
+    public void DeleteQueuedAction(string queuedId)
+    {
+        DeleteQueuedInternal(queuedId);
+        Changed?.Invoke();
+    }
+
+    private void DeleteQueuedInternal(string queuedId)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM QueuedAction WHERE Id = $id";
+        cmd.Parameters.AddWithValue("$id", queuedId);
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Pull any queued step into the next-action slot right now (for steps
+    /// that aren't order-dependent). The current unfinished next action, if
+    /// any, goes back to the top of the queue so nothing is lost.
+    /// </summary>
+    public void PromoteQueuedAction(string queuedId)
+    {
+        QueuedAction? item = null;
+        foreach (var q in GetAllQueued())
+            if (q.Id == queuedId) { item = q; break; }
+        if (item is null) return;
+
+        var p = GetProject(item.ProjectId);
+        if (p is null) return;
+
+        if (!string.IsNullOrWhiteSpace(p.NextAction))
+        {
+            var queue = GetQueue(item.ProjectId);
+            var minSort = queue.Count == 0 ? 1 : queue[0].SortOrder;
+            using var conn = Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = """
+                INSERT INTO QueuedAction (Id, ProjectId, Text, SortOrder)
+                VALUES ($id, $pid, $text, $sort)
+                """;
+            cmd.Parameters.AddWithValue("$id", Guid.NewGuid().ToString("N"));
+            cmd.Parameters.AddWithValue("$pid", item.ProjectId);
+            cmd.Parameters.AddWithValue("$text", p.NextAction);
+            cmd.Parameters.AddWithValue("$sort", minSort - 1);
+            cmd.ExecuteNonQuery();
+        }
+
+        DeleteQueuedInternal(item.Id);
+        p.NextAction = item.Text;
+        p.LastTouchedAt = DateTimeOffset.UtcNow;
+        UpdateProject(p);
+    }
+
+    /// <summary>Move a queued step up or down one slot (for order-dependent chains).</summary>
+    public void MoveQueuedAction(string queuedId, bool up)
+    {
+        QueuedAction? item = null;
+        foreach (var q in GetAllQueued())
+            if (q.Id == queuedId) { item = q; break; }
+        if (item is null) return;
+
+        var queue = GetQueue(item.ProjectId);
+        var index = queue.FindIndex(q => q.Id == queuedId);
+        var swapWith = up ? index - 1 : index + 1;
+        if (index < 0 || swapWith < 0 || swapWith >= queue.Count) return;
+
+        SetQueueSort(queue[index].Id, queue[swapWith].SortOrder);
+        SetQueueSort(queue[swapWith].Id, queue[index].SortOrder);
+        Changed?.Invoke();
+    }
+
+    private void SetQueueSort(string queuedId, int sortOrder)
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE QueuedAction SET SortOrder = $sort WHERE Id = $id";
+        cmd.Parameters.AddWithValue("$id", queuedId);
+        cmd.Parameters.AddWithValue("$sort", sortOrder);
+        cmd.ExecuteNonQuery();
+    }
+
+    private List<QueuedAction> GetAllQueued()
+    {
+        using var conn = Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT * FROM QueuedAction";
+        using var reader = cmd.ExecuteReader();
+        var list = new List<QueuedAction>();
+        while (reader.Read())
+        {
+            list.Add(new QueuedAction
+            {
+                Id = reader.GetString(reader.GetOrdinal("Id")),
+                ProjectId = reader.GetString(reader.GetOrdinal("ProjectId")),
+                Text = reader.GetString(reader.GetOrdinal("Text")),
+                SortOrder = reader.GetInt32(reader.GetOrdinal("SortOrder"))
+            });
+        }
+        return list;
     }
 
     private static Project ReadProject(SqliteDataReader r) => new()

@@ -44,6 +44,9 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string focusNextStepDraft = "";
 
+    [ObservableProperty]
+    private string focusQueueHint = "";
+
     // Now-tab suggestion: Squirrel opens with an offer, never a blank choice.
     [ObservableProperty]
     private ProjectItemViewModel? suggestedProject;
@@ -125,7 +128,8 @@ public partial class MainViewModel : ObservableObject
 
         Projects.Clear();
         foreach (var p in _store.GetProjects())
-            Projects.Add(new ProjectItemViewModel(p, staleDays));
+            Projects.Add(new ProjectItemViewModel(
+                p, staleDays, _store.GetQueue(p.Id), _store.GetHistory(p.Id)));
 
         StaleProjects.Clear();
         foreach (var p in _store.GetStaleProjects())
@@ -137,6 +141,10 @@ public partial class MainViewModel : ObservableObject
             ? null
             : Projects.FirstOrDefault(p => p.Id == focusId);
         HasFocus = FocusProject is not null;
+
+        FocusQueueHint = FocusProject is { QueueCount: > 0 } fp
+            ? $"{fp.QueueCount} step{(fp.QueueCount == 1 ? "" : "s")} queued; finish with the box empty to pull the next one."
+            : "";
 
         UpdateSuggestion();
     }
@@ -261,16 +269,43 @@ public partial class MainViewModel : ObservableObject
     private void GoToProjects() => SelectedTabIndex = 2;
 
     /// <summary>
-    /// "I did the thing." Records the win by touching the project and swaps
-    /// in the next tiny step you typed; keeps the momentum loop going.
+    /// "I did the thing." Logs the finished step to the project's win
+    /// history, then swaps in what you typed, or pulls the top of the
+    /// up-next queue when the box is empty.
     /// </summary>
     [RelayCommand]
     private void CompleteFocusStep()
     {
         if (FocusProject is null) return;
-        _store.SetNextAction(FocusProject.Id, FocusNextStepDraft);
+        _store.CompleteNextAction(FocusProject.Id, FocusNextStepDraft);
         FocusNextStepDraft = "";
     }
+
+    // ---------- Up-next queue ----------
+
+    [RelayCommand]
+    private void AddQueuedStep(ProjectItemViewModel p)
+    {
+        if (string.IsNullOrWhiteSpace(p.NewStepDraft)) return;
+        _store.AddQueuedAction(p.Id, p.NewStepDraft);
+        p.NewStepDraft = "";
+    }
+
+    [RelayCommand]
+    private void PromoteQueued(QueuedItemViewModel q) =>
+        _store.PromoteQueuedAction(q.Id);
+
+    [RelayCommand]
+    private void MoveQueuedUp(QueuedItemViewModel q) =>
+        _store.MoveQueuedAction(q.Id, up: true);
+
+    [RelayCommand]
+    private void MoveQueuedDown(QueuedItemViewModel q) =>
+        _store.MoveQueuedAction(q.Id, up: false);
+
+    [RelayCommand]
+    private void DeleteQueued(QueuedItemViewModel q) =>
+        _store.DeleteQueuedAction(q.Id);
 
     [RelayCommand]
     private void TouchFocus()

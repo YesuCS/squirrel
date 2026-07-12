@@ -63,6 +63,30 @@ public class Project
 }
 
 /// <summary>
+/// A completed step; the win log. Every tiny action you finish is recorded
+/// here so you can see the trail that got a project done.
+/// </summary>
+public class ActionLogEntry
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string ProjectId { get; set; } = "";
+    public string Text { get; set; } = "";
+    public DateTimeOffset CompletedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+/// <summary>
+/// A future step waiting its turn. The queue holds the plan; the project
+/// still shows exactly ONE next action at a time.
+/// </summary>
+public class QueuedAction
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string ProjectId { get; set; } = "";
+    public string Text { get; set; } = "";
+    public int SortOrder { get; set; }
+}
+
+/// <summary>
 /// A raw capture. Zero required fields beyond the text so the shiny new idea
 /// gets out of your head and saved in under two seconds.
 /// </summary>

@@ -89,6 +89,8 @@
                                 <TextBox Watermark="e.g. open the csproj and add the NuGet reference"
                                          Text="{Binding FocusNextStepDraft}" />
                             </DockPanel>
+                            <TextBlock Classes="muted" TextWrapping="Wrap"
+                                       Text="{Binding FocusQueueHint}" />
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button Content="I worked on this" Command="{Binding TouchFocusCommand}" />
@@ -190,6 +192,59 @@
                                                 <DatePicker SelectedDate="{Binding DueDateDraft, Mode=TwoWay}"
                                                             HorizontalAlignment="Stretch" />
                                             </DockPanel>
+
+                                            <Expander Header="{Binding PlanHeader}">
+                                                <StackPanel Spacing="8" Margin="0,8,0,0">
+                                                    <DockPanel>
+                                                        <Button DockPanel.Dock="Right" Margin="8,0,0,0" Content="Queue it"
+                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).AddQueuedStepCommand}"
+                                                                CommandParameter="{Binding}" />
+                                                        <TextBox Watermark="A future step; one line, one sitting"
+                                                                 Text="{Binding NewStepDraft}" />
+                                                    </DockPanel>
+
+                                                    <ItemsControl ItemsSource="{Binding Queue}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:QueuedItemViewModel">
+                                                                <DockPanel Margin="0,2">
+                                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+                                                                        <Button Content="Make next" FontSize="12"
+                                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).PromoteQueuedCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                        <Button Content="↑" FontSize="12"
+                                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).MoveQueuedUpCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                        <Button Content="↓" FontSize="12"
+                                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).MoveQueuedDownCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                        <Button Content="✕" FontSize="12" Opacity="0.6"
+                                                                                Command="{Binding #Root.((vm:MainViewModel)DataContext).DeleteQueuedCommand}"
+                                                                                CommandParameter="{Binding}" />
+                                                                    </StackPanel>
+                                                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                                                               VerticalAlignment="Center" />
+                                                                </DockPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <TextBlock Classes="muted" Text="DONE SO FAR"
+                                                               IsVisible="{Binding HasHistory}" />
+                                                    <ItemsControl ItemsSource="{Binding History}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:HistoryItemViewModel">
+                                                                <DockPanel Margin="0,1">
+                                                                    <TextBlock DockPanel.Dock="Right" Classes="muted"
+                                                                               Text="{Binding DateText}" Margin="8,0,0,0" />
+                                                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap"
+                                                                               Opacity="0.75" />
+                                                                </DockPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Expander>
+
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <Button Content="Focus"
                                                         Command="{Binding #Root.((vm:MainViewModel)DataContext).SetFocusCommand}"

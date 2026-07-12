@@ -39,9 +39,12 @@ project by priority, due date, and neglect) with three easy outs: "Let's do
 this" locks it in, "Something else" offers the next candidate, "I'll pick
 myself" jumps to the Projects tab. Once something is in focus, Now shows
 that project and its single next action, nothing else. When you finish the
-step, type the next tiny step and press "Done, swap it in". "I worked on
-this" records progress without changing the step. "Clear focus" steps away
-without judgment.
+step, type the next tiny step and press "Done, swap it in"; the finished
+step is written to that project's win history. Leave the box empty and
+Squirrel pulls the next step from the project's up-next queue instead.
+"I worked on this" only resets the neglect clock; it records nothing, so
+when you actually finish a step, use the Done button and collect the win.
+"Clear focus" steps away without judgment.
 
 INBOX holds everything you have caught. When you have a spare moment (not
 right when you capture), triage: "→ Project" turns an idea into a real
@@ -82,6 +85,23 @@ which is how "juggling" happens automatically: as a deadline approaches, that
 project climbs the list and starts being offered, before it becomes a crisis.
 
 
+THE UP-NEXT QUEUE AND THE WIN HISTORY
+
+One next action stays the law, but plans are allowed. Each project card has
+an "Up next & wins" section where you can queue future steps. Only the
+current next action is ever front and center; the queue waits quietly.
+
+When steps depend on each other, keep the queue in order (the arrows move
+steps up and down) and finish each step with an empty box; Squirrel pulls
+the top one automatically. When steps are independent, hit "Make next" on
+whichever one matches your energy right now; the unfinished current action
+goes back to the top of the queue, nothing is lost.
+
+Below the queue is the win history: every step you completed, with dates.
+That's the receipt that the tiny-actions method actually finishes things,
+and it's worth looking at on days when it feels like you did nothing.
+
+
 ONE NEXT ACTION, THE RULE THAT MATTERS MOST
 
 When you set a next action, make it small and physical: "open MainWindow.axaml
@@ -114,6 +134,10 @@ Routes:
     POST /projects                    {name, nextAction?, notes?, priority?, dueDate?}
     POST /projects/{id}/touch         mark worked-on now
     POST /projects/{id}/next-action   {nextAction}
+    POST /projects/{id}/complete      {nextAction?}; logs the win, pulls queue if omitted
+    GET  /projects/{id}/history       completed steps, newest first
+    GET  /projects/{id}/queue         queued future steps in order
+    POST /projects/{id}/queue         {text} -> add a future step
 
 Apple Shortcuts recipe: new shortcut, "Get Contents of URL", method POST, URL
 http://127.0.0.1:53595/capture, headers X-Api-Key and Content-Type

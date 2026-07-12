@@ -108,6 +108,38 @@ public class ApiServer
             return Results.Json(ProjectDto(_store.GetProject(id)!));
         });
 
+        // Complete the current next action: logs it to the win history and
+        // swaps in nextAction, or the top queued step when omitted.
+        app.MapPost("/projects/{id}/complete", (string id, NextActionRequest req) =>
+        {
+            if (_store.GetProject(id) is null) return Results.NotFound();
+            _store.CompleteNextAction(id, req.NextAction);
+            return Results.Json(ProjectDto(_store.GetProject(id)!));
+        });
+
+        app.MapGet("/projects/{id}/history", (string id) =>
+        {
+            if (_store.GetProject(id) is null) return Results.NotFound();
+            return Results.Json(_store.GetHistory(id)
+                .Select(h => new { h.Id, h.Text, h.CompletedAt }));
+        });
+
+        app.MapGet("/projects/{id}/queue", (string id) =>
+        {
+            if (_store.GetProject(id) is null) return Results.NotFound();
+            return Results.Json(_store.GetQueue(id)
+                .Select(q => new { q.Id, q.Text, q.SortOrder }));
+        });
+
+        app.MapPost("/projects/{id}/queue", (string id, CaptureRequest req) =>
+        {
+            if (_store.GetProject(id) is null) return Results.NotFound();
+            if (string.IsNullOrWhiteSpace(req.Text))
+                return Results.BadRequest(new { error = "text is required" });
+            var q = _store.AddQueuedAction(id, req.Text);
+            return Results.Json(new { q.Id, q.Text, q.SortOrder }, statusCode: 201);
+        });
+
         _app = app;
         await app.StartAsync();
     }

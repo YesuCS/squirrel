@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Squirrel.Core;
 
@@ -16,13 +17,45 @@ public partial class ProjectItemViewModel : ObservableObject
     [ObservableProperty]
     private DateTimeOffset? dueDateDraft;
 
-    public ProjectItemViewModel(Project model, int staleDays)
+    [ObservableProperty]
+    private string newStepDraft = "";
+
+    public ObservableCollection<QueuedItemViewModel> Queue { get; } = new();
+    public ObservableCollection<HistoryItemViewModel> History { get; } = new();
+
+    public ProjectItemViewModel(
+        Project model, int staleDays,
+        IEnumerable<QueuedAction>? queue = null,
+        IEnumerable<ActionLogEntry>? history = null)
     {
         Model = model;
         nextActionDraft = model.NextAction;
         priorityDraft = model.Priority;
         dueDateDraft = model.DueDate;
         IsStale = model.Status == ProjectStatus.Active && model.DaysSinceTouch >= staleDays;
+
+        if (queue is not null)
+            foreach (var q in queue)
+                Queue.Add(new QueuedItemViewModel(q));
+        if (history is not null)
+            foreach (var h in history)
+                History.Add(new HistoryItemViewModel(h));
+    }
+
+    public int QueueCount => Queue.Count;
+    public int WinCount => History.Count;
+    public bool HasHistory => History.Count > 0;
+
+    public string PlanHeader
+    {
+        get
+        {
+            var parts = new List<string>();
+            parts.Add(Queue.Count == 1 ? "1 step queued" : $"{Queue.Count} steps queued");
+            if (History.Count > 0)
+                parts.Add(History.Count == 1 ? "1 step done" : $"{History.Count} steps done");
+            return "Up next & wins · " + string.Join(" · ", parts);
+        }
     }
 
     public string Id => Model.Id;
