@@ -5,17 +5,20 @@
         x:Class="Squirrel.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         x:Name="Root"
-        Title="Squirrel 🐿️"
+        Title="Squirrel"
         Icon="/Assets/squirrel.png"
-        Width="860" Height="640"
+        Background="{DynamicResource WindowBg}"
+        Width="880" Height="680"
         MinWidth="640" MinHeight="480">
 
-    <DockPanel Margin="16">
+    <DockPanel Margin="20,16">
 
         <!-- Always-visible capture bar: the shiny idea goes here, then back to work. -->
-        <Border DockPanel.Dock="Top" Classes="card" Background="{DynamicResource CaptureCardBrush}">
+        <Border DockPanel.Dock="Top" Classes="card" MaxWidth="680"
+                Background="{DynamicResource CaptureCardBrush}"
+                BorderBrush="{DynamicResource CaptureCardBorderBrush}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                <Button DockPanel.Dock="Right" Margin="10,0,0,0" Classes="accent"
                         Content="Catch it"
                         Command="{Binding CaptureCommand}" />
                 <TextBox Watermark="Shiny new idea? Dump it here and get back to what you were doing…"
@@ -32,7 +35,7 @@
             <!-- ================= NOW ================= -->
             <TabItem Header="Now">
                 <ScrollViewer>
-                    <StackPanel Margin="0,12" Spacing="8" MaxWidth="640">
+                    <StackPanel Margin="0,20" Spacing="8" MaxWidth="680">
 
                         <StackPanel IsVisible="{Binding ShowEmpty}" Spacing="10">
                             <TextBlock Classes="h1" Text="Nothing in flight yet." />
@@ -63,12 +66,13 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Classes="muted" Text="PROJECT NOTES" />
                                     <md:MarkdownScrollViewer MaxHeight="200"
+                                            MarkdownStyleName="Standard"
                                             Markdown="{Binding SuggestedProject.Description, FallbackValue=''}" />
                                 </StackPanel>
                             </Border>
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Content="Let's do this" Command="{Binding AcceptSuggestionCommand}" />
+                                <Button Content="Let's do this" Classes="accent" Command="{Binding AcceptSuggestionCommand}" />
                                 <Button Content="Something else" Command="{Binding NextSuggestionCommand}" />
                                 <Button Content="I'll pick myself" Command="{Binding GoToProjectsCommand}" />
                             </StackPanel>
@@ -96,13 +100,14 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Classes="muted" Text="PROJECT NOTES" />
                                     <md:MarkdownScrollViewer MaxHeight="280"
+                                            MarkdownStyleName="Standard"
                                             Markdown="{Binding FocusProject.Description, FallbackValue=''}" />
                                 </StackPanel>
                             </Border>
 
                             <TextBlock Classes="h2" Text="Did it? What's the next tiny step?" />
                             <DockPanel>
-                                <Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                                <Button DockPanel.Dock="Right" Margin="10,0,0,0" Classes="accent"
                                         Content="Done → swap it in"
                                         Command="{Binding CompleteFocusStepCommand}" />
                                 <TextBox Watermark="e.g. open the csproj and add the NuGet reference"
@@ -123,7 +128,7 @@
             <!-- ================= INBOX ================= -->
             <TabItem Header="{Binding InboxTabHeader}">
                 <ScrollViewer>
-                    <StackPanel Margin="0,12" Spacing="4">
+                    <StackPanel Margin="0,20" Spacing="4" MaxWidth="680">
                         <TextBlock Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap"
                                    Text="Everything you caught, from the app or the API. Promote it to a project or dismiss it; no item requires anything from you today." />
                         <ItemsControl ItemsSource="{Binding Inbox}">
@@ -155,7 +160,7 @@
             <!-- ================= PROJECTS ================= -->
             <TabItem Header="Projects">
                 <ScrollViewer>
-                    <StackPanel Margin="0,12" Spacing="4">
+                    <StackPanel Margin="0,20" Spacing="4" MaxWidth="680">
 
                         <Border Classes="card">
                             <StackPanel Spacing="8">
@@ -180,7 +185,7 @@
                                     <DatePicker SelectedDate="{Binding NewProjectDueDate, Mode=TwoWay}"
                                                 HorizontalAlignment="Stretch" />
                                 </DockPanel>
-                                <Button Content="Add project" HorizontalAlignment="Right"
+                                <Button Content="Add project" HorizontalAlignment="Right" Classes="accent"
                                         Command="{Binding AddProjectCommand}" />
                             </StackPanel>
                         </Border>
@@ -303,13 +308,14 @@
             <!-- ================= RESURFACE ================= -->
             <TabItem Header="{Binding StaleTabHeader}">
                 <ScrollViewer>
-                    <StackPanel Margin="0,12" Spacing="4">
+                    <StackPanel Margin="0,20" Spacing="4" MaxWidth="680">
                         <TextBlock Classes="muted" Margin="0,0,0,8" TextWrapping="Wrap"
                                    Text="Projects the hyperfocus moved on from. No guilt; pick one to re-enter via its next action, or consciously park it." />
                         <ItemsControl ItemsSource="{Binding StaleProjects}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ProjectItemViewModel">
-                                    <Border Classes="card" Background="{DynamicResource StaleCardBrush}">
+                                    <Border Classes="card" Background="{DynamicResource StaleCardBrush}"
+                                            BorderBrush="{DynamicResource StaleCardBorderBrush}">
                                         <StackPanel Spacing="6">
                                             <DockPanel>
                                                 <TextBlock DockPanel.Dock="Right" Classes="muted"
@@ -344,7 +350,7 @@
             <!-- ================= SETTINGS ================= -->
             <TabItem Header="Settings">
                 <ScrollViewer>
-                    <StackPanel Margin="0,12" Spacing="10" MaxWidth="680">
+                    <StackPanel Margin="0,20" Spacing="10" MaxWidth="680">
 
                         <Border Classes="card">
                             <StackPanel Spacing="8">

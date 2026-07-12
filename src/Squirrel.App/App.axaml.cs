@@ -124,7 +124,7 @@ public class App : Application
         _trayIcon = new TrayIcon
         {
             Icon = new WindowIcon(AssetLoader.Open(
-                new Uri("avares://Squirrel.App/Assets/squirrel-tray.png"))),
+                new Uri("avares://Squirrel/Assets/squirrel-tray.png"))),
             ToolTipText = "Squirrel",
             Menu = menu
         };

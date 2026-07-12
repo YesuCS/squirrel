@@ -6,6 +6,7 @@
         CanResize="False"
         Topmost="True"
         ShowInTaskbar="False"
+        Background="{DynamicResource WindowBg}"
         WindowStartupLocation="CenterScreen">
 
     <StackPanel Margin="16" Spacing="8">

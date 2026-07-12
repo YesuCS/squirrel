@@ -110,7 +110,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             using var stream = Avalonia.Platform.AssetLoader.Open(
-                new Uri("avares://Squirrel.App/Assets/MANUAL.md"));
+                new Uri("avares://Squirrel/Assets/MANUAL.md"));
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
         }

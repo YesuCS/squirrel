@@ -26,7 +26,7 @@ vpk pack \
   --packTitle Squirrel \
   --packVersion "$VERSION" \
   --packDir "publish/$RID" \
-  --mainExe Squirrel.App \
+  --mainExe Squirrel \
   --icon src/Squirrel.App/Assets/squirrel.icns
 
 echo

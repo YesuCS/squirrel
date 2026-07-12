@@ -24,4 +24,4 @@ dotnet publish src/Squirrel.App -c Release -r "$RID" \
   -o "publish/$RID"
 
 echo
-echo "Done -> publish/$RID/Squirrel.App"
+echo "Done -> publish/$RID/Squirrel"

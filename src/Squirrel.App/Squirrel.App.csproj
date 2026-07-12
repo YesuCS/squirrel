@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <AssemblyName>Squirrel</AssemblyName>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -22,7 +23,7 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
     <PackageReference Include="Velopack" Version="0.0.*" />
     <PackageReference Include="SharpHook" Version="5.*" />
-    <PackageReference Include="Markdown.Avalonia" Version="11.0.*" />
+    <PackageReference Include="Markdown.Avalonia" Version="11.0.2" />
   </ItemGroup>
 
   <ItemGroup>

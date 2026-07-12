@@ -6,39 +6,83 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="CardBrush" Color="#0D000000" />
-                    <SolidColorBrush x:Key="StaleCardBrush" Color="#26C08020" />
-                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#2620A060" />
+                    <SolidColorBrush x:Key="WindowBg" Color="#FAF9F7" />
+                    <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#E7E4DE" />
+                    <SolidColorBrush x:Key="StaleCardBrush" Color="#FBF3E3" />
+                    <SolidColorBrush x:Key="StaleCardBorderBrush" Color="#EBD9B8" />
+                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#F7EBDD" />
+                    <SolidColorBrush x:Key="CaptureCardBorderBrush" Color="#EAD3B8" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="CardBrush" Color="#20FFFFFF" />
-                    <SolidColorBrush x:Key="StaleCardBrush" Color="#33A07020" />
-                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#3320A060" />
+                    <SolidColorBrush x:Key="WindowBg" Color="#1B1D1E" />
+                    <SolidColorBrush x:Key="CardBrush" Color="#242628" />
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#34373A" />
+                    <SolidColorBrush x:Key="StaleCardBrush" Color="#2C2619" />
+                    <SolidColorBrush x:Key="StaleCardBorderBrush" Color="#4A3E24" />
+                    <SolidColorBrush x:Key="CaptureCardBrush" Color="#2C2620" />
+                    <SolidColorBrush x:Key="CaptureCardBorderBrush" Color="#4A3A28" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
+
+            <SolidColorBrush x:Key="AccentBrush" Color="#C96F22" />
+            <SolidColorBrush x:Key="AccentHoverBrush" Color="#B45F18" />
+            <SolidColorBrush x:Key="AccentPressedBrush" Color="#9E5212" />
         </ResourceDictionary>
     </Application.Resources>
 
     <Application.Styles>
         <FluentTheme />
 
+        <!-- Typography -->
         <Style Selector="TextBlock.h1">
-            <Setter Property="FontSize" Value="28" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="30" />
+            <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style Selector="TextBlock.h2">
-            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontSize" Value="17" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
         <Style Selector="TextBlock.muted">
-            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Opacity" Value="0.55" />
             <Setter Property="FontSize" Value="12" />
         </Style>
+
+        <!-- Calm, bordered cards -->
         <Style Selector="Border.card">
             <Setter Property="Background" Value="{DynamicResource CardBrush}" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="14" />
-            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="18" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <!-- Softer controls -->
+        <Style Selector="Button">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14,7" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <!-- Primary (accent) buttons -->
+        <Style Selector="Button.accent">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentHoverBrush}" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style Selector="Button.accent:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentPressedBrush}" />
+            <Setter Property="Foreground" Value="White" />
         </Style>
     </Application.Styles>
 </Application>

@@ -15,15 +15,15 @@ jobs:
         include:
           - os: macos-14        # Apple Silicon; produces a proper Squirrel.app bundle
             rid: osx-arm64
-            exe: Squirrel.App
+            exe: Squirrel
             icon: src/Squirrel.App/Assets/squirrel.icns
           - os: windows-latest
             rid: win-x64
-            exe: Squirrel.App.exe
+            exe: Squirrel.exe
             icon: src/Squirrel.App/Assets/squirrel.ico
           - os: ubuntu-latest
             rid: linux-x64
-            exe: Squirrel.App
+            exe: Squirrel
             icon: src/Squirrel.App/Assets/squirrel.png
     runs-on: ${{ matrix.os }}
     steps:

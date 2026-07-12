@@ -4,6 +4,7 @@
         Title="Squirrel manual"
         Icon="/Assets/squirrel.png"
         Width="840" Height="640"
+        Background="{DynamicResource WindowBg}"
         MinWidth="480" MinHeight="360">
 
     <ScrollViewer Padding="24">
