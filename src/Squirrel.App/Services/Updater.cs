@@ -11,8 +11,7 @@ namespace Squirrel.App.Services;
 /// </summary>
 public static class Updater
 {
-    // TODO: set to your repo after `gh repo create`.
-    public const string RepoUrl = "https://github.com/YOUR_GITHUB_USERNAME/squirrel";
+    public const string RepoUrl = "https://github.com/YesuCS/squirrel";
 
     private static UpdateManager? _manager;
     private static UpdateInfo? _pending;
